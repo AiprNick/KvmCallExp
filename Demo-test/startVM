@@ -1,0 +1,19 @@
+#!/bin/sh
+~/qemu-1.4.0/x86_64-softmmu/qemu-system-x86_64 \
+~/vImage/demo-0612.qcow2 \
+-cpu host,+x2apic \
+--enable-kvm \
+-boot c \
+-m 4096 \
+-smp 1 \
+-netdev tap,ifname=tap-fpga,vhost=on,id=net1,script=no \
+-device virtio-net-pci,netdev=net1,mac=00:00:00:00:00:01 \
+-device pci-assign,host=81:00.0
+#-vcpu 0,affinity=0x2,prio=0 \
+#-vcpu 1,affinity=0x4,prio=80 \
+#-vcpu 2,affinity=0x8,prio=80 \
+#-vcpu 3,affinity=0x10,prio=80 \
+#-vcpu 4,affinity=0x20,prio=80 \
+#-vcpu 5,affinity=0x40,prio=80 \
+#-vcpu 6,affinity=0x80,prio=80 \
+#-vcpu 7,affinity=0x100,prio=80

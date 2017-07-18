@@ -5680,6 +5680,7 @@ static int handle_halt(struct kvm_vcpu *vcpu)
 
 static int handle_vmcall(struct kvm_vcpu *vcpu)
 {
+	printk(KERN_INFO "[Nick] hndle_vmcall!\n");
 	kvm_emulate_hypercall(vcpu);
 	return 1;
 }

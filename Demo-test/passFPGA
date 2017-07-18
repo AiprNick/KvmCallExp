@@ -1,0 +1,10 @@
+#!/bin/bash
+# Pass through PCI Device to pci-stub 
+# Date： 2016/01/04 
+# Created by NickLin
+
+modprobe pci-stub
+echo "10ee 0007" > /sys/bus/pci/drivers/pci-stub/new_id
+echo 0000:81:00.0 > /sys/bus/pci/devices/0000\:81\:00.0/driver/unbind
+echo 0000:81:00.0 > /sys/bus/pci/drivers/pci-stub/bind
+exit 0

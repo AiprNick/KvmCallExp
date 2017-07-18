@@ -1,0 +1,29 @@
+#!/bin/bash
+# A simple command for handling KVM's PI mode in Host 
+# Date： 2015/12/22 
+# Created by NickLin
+
+echo "Change PI mode : enale=y, disable=n"
+echo "*** kvm-intel current state ***"
+cat /sys/module/kvm_intel/parameters/enable_apicv
+read -p "Plz select y/n/q option : " event
+
+if [ $event == y ] || [ $event == Y ]; then
+	echo "- Prepare to reload kvm-intel module -"
+	rmmod kvm_intel
+	modprobe kvm_intel enable_apicv=1
+	echo "-- kvm-intel state is changed --"
+	cat /sys/module/kvm_intel/parameters/enable_apicv
+	#echo Y > LIDC/checkENABLELID
+elif [ $event == n ] || [ $event == N ]; then
+	echo "- Prepare to reload kvm-intel module -"
+	rmmod kvm_intel
+	modprobe kvm_intel enable_apicv=0
+	echo "-- kvm-intel state is changed --"
+	cat /sys/module/kvm_intel/parameters/enable_apicv
+	#echo N > LIDC/checkENABLELID
+else
+	echo "Bye!"
+	exit 0
+fi
+

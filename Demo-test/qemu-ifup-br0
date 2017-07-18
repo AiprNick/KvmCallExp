@@ -1,0 +1,54 @@
+# script to bring up the tun device in QEMU in bridged mode 
+# first parameter is name of tap device (e.g. tap0)
+#
+# some constants specific to the local host - change to suit your host
+#
+# in /etc/qemu-ifup 
+#!/bin/sh
+#/usr/sbin/openvpn --mktun --dev $1 --user `id -un`
+#ifconfig $1 promisc up
+#brctl addif br0 $1
+#ifconfig $1
+#
+
+# bridge network config
+#ETH0IPADDR=140.96.27.228
+#GATEWAY=140.96.27.254
+#BROADCAST=140.96.27.255
+# network device
+dev=eno1
+# bridge device
+brdev=br0
+
+
+#
+# First take eth0 down, then bring it up with IP address 0.0.0.0 
+#
+/sbin/ifdown $dev 
+/sbin/ifconfig $dev 0.0.0.0 promisc up
+#
+# Bring up the tap device (name specified as first argument, by QEMU)
+#
+openvpn --mktun --dev $1 --user `id -un`
+/sbin/ifconfig $1 0.0.0.0 promisc up
+##
+## create the bridge between eth0 and the tap device
+##
+#/usr/sbin/brctl addbr $brdev
+#/usr/sbin/brctl addif $brdev $dev
+#/usr/sbin/brctl addif $brdev $1
+
+#brctl addbr $brdev
+brctl addif $brdev $dev
+brctl addif $brdev $1
+
+## 
+## only a single bridge so loops are not possible, turn off spanning tree protocol
+##
+#/usr/sbin/brctl stp $brdev off
+brctl stp $brdev off
+## 
+## Bring up the bridge with ETH0IPADDR and add the default route 
+##
+#/sbin/ifconfig $brdev $ETH0IPADDR netmask 255.255.255.0 broadcast $BROADCAST
+#/sbin/route add default gw $GATEWAY

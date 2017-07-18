@@ -20,6 +20,7 @@
  */
 
 #include <linux/kvm_host.h>
+#include <linux/ktime.h>
 #include "irq.h"
 #include "mmu.h"
 #include "i8254.h"
@@ -68,6 +69,7 @@
 #include <asm/div64.h>
 #include <asm/irq_remapping.h>
 
+#define KVM_NICK_EXP 100
 #define MAX_IO_MSRS 256
 #define KVM_MAX_MCE_BANKS 32
 #define KVM_MCE_CAP_SUPPORTED (MCG_CTL_P | MCG_SER_P)
@@ -75,6 +77,7 @@
 #define emul_to_vcpu(ctxt) \
 	container_of(ctxt, struct kvm_vcpu, arch.emulate_ctxt)
 
+static ktime_t nick_start, nick_end;
 /* EFER defaults:
  * - enable syscall per default because its emulated by KVM
  * - enable LME and LMA per default on 64 bit KVM
@@ -5888,8 +5891,16 @@ int kvm_emulate_hypercall(struct kvm_vcpu *vcpu)
 	a2 = kvm_register_read(vcpu, VCPU_REGS_RDX);
 	a3 = kvm_register_read(vcpu, VCPU_REGS_RSI);
 
+        printk(KERN_INFO "[Nick] kvm_emulate_hypercall! %d \n",nr);
 	trace_kvm_hypercall(nr, a0, a1, a2, a3);
 
+	if(nr == KVM_NICK_EXP) {
+		s64 actual_time;
+
+		nick_end = ktime_get();
+		actual_time = ktime_to_ns(ktime_sub(nick_end,nick_start));
+		printk(KERN_INFO "[Nick] hyper call triggered!,%lld\n",(long long)actual_time);
+	}
 	op_64_bit = is_64_bit_mode(vcpu);
 	if (!op_64_bit) {
 		nr &= 0xFFFFFFFF;
@@ -5901,6 +5912,7 @@ int kvm_emulate_hypercall(struct kvm_vcpu *vcpu)
 
 	if (kvm_x86_ops->get_cpl(vcpu) != 0) {
 		ret = -KVM_EPERM;
+		//printk(KERN_INFO "[Nick] ????!\n");
 		goto out;
 	}
 
@@ -5913,6 +5925,7 @@ int kvm_emulate_hypercall(struct kvm_vcpu *vcpu)
 		ret = 0;
 		break;
 	default:
+		//printk(KERN_INFO "[Nick] switch default!\n");
 		ret = -KVM_ENOSYS;
 		break;
 	}
@@ -6362,6 +6375,8 @@ void kvm_arch_mmu_notifier_invalidate_page(struct kvm *kvm,
  * exiting to the userspace.  Otherwise, the value will be returned to the
  * userspace.
  */
+
+//static int count_vcpu_enter_guest = 0;
 static int vcpu_enter_guest(struct kvm_vcpu *vcpu)
 {
 	int r;
@@ -6370,6 +6385,8 @@ static int vcpu_enter_guest(struct kvm_vcpu *vcpu)
 		kvm_cpu_accept_dm_intr(vcpu);
 
 	bool req_immediate_exit = false;
+
+	//printk(KERN_INFO "vcpu_enter_guest : %d", count_vcpu_enter_guest++);
 
 	if (vcpu->requests) {
 		if (kvm_check_request(KVM_REQ_MMU_RELOAD, vcpu))
@@ -6522,6 +6539,7 @@ static int vcpu_enter_guest(struct kvm_vcpu *vcpu)
 
 	trace_kvm_entry(vcpu->vcpu_id);
 	wait_lapic_expire(vcpu);
+	nick_start = ktime_get();
 	__kvm_guest_enter();
 
 	if (unlikely(vcpu->arch.switch_db_regs)) {

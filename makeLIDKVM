@@ -1,0 +1,10 @@
+#!/bin/bash
+# A simple command for building LID-KVM
+# Date： 2016/07/16 
+# Created by NickLin
+
+cp -r kvm/ ../linux-4.4/arch/x86/
+cd ../linux-4.4/arch/x86/kvm/
+sudo make M=$PWD -C /lib/modules/`uname -r`/build
+
+exit 0
