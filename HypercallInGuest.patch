@@ -1,0 +1,32 @@
+--- fpga_ori.c	2017-07-24 17:25:01.011116277 +0800
++++ fpga.c	2017-07-24 17:20:22.672076696 +0800
+@@ -14,11 +14,7 @@
+ #include "fpga.h"
+ #include "fpga_ioctl.h"
+ 
+-//#define VENDOR_ID 0x10EE
+-//#define DEVICE_ID 0x0007
+-//#define INT_START 0x98000000
+-//#define INT_STOP 0x00000000
+-//#define FPGA_REG 0x005C
++#define KVM_HYPERCALL ".byte 0x0f,0x01,0xc1"
+ 
+ static int Major;
+ static struct fpga_dev hw;
+@@ -48,8 +44,16 @@
+ static irqreturn_t fpga_isr(int irq, void *dev_id)
+ {
+ 	u32 tmp;
++	long ret;
+ 	//printk(KERN_ERR "pcie-fpga: ISR!!\n");
+ 	writel(INT_STOP, hw.hw_addr + FPGA_REG);
++
++	/*call hypercall to get time in host*/
++        asm volatile (KVM_HYPERCALL
++        : "=a"(ret)
++        : "a"(100)
++        : "memory");
++
+ 	printk(KERN_INFO "pcie-fpga: ISR!!\n");
+ 	tmp = readl(hw.hw_addr + FPGA_REG);
+ 	printk(KERN_INFO "pcie-fpga: ISR Stop, Bar-1 0x5C(hex): %x\n", tmp);
